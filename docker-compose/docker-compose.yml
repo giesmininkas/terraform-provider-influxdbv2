@@ -1,0 +1,23 @@
+version: '3.6'
+services:
+  influx:
+    container_name: influx
+    image: influxdb:2.3.0-alpine
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=4nycBGHwUqoQekHbVJP5SPz4
+      - DOCKER_INFLUXDB_INIT_ORG=matrasas.dev
+      - DOCKER_INFLUXDB_INIT_BUCKET=default
+    volumes:
+      - ./data:/var/lib/influxdb2
+    ports:
+      - "8086:8086"
+    networks:
+      - influx
+    restart: always
+
+networks:
+  influx:
+    name: influx
+    driver: bridge
