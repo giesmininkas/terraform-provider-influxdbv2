@@ -11,3 +11,8 @@ provider "influxdbv2" {
   host = "http://localhost:8086"
   token = "J0HGVO8RGAq-gNfcppdPBXkqxNkTiSR9k4Ph3ilZYuC4mhqneFSBiTcjl3VoQx8gHJp81FdGSZcvx-9A_QTTkg=="
 }
+
+resource "influxdbv2_bucket" "test_bucket" {
+  name = "aaaaaaa"
+  org_id = "293ca298c3861fa3"
+}

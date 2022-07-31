@@ -11,39 +11,69 @@ func resourceBucket() *schema.Resource {
 	return &schema.Resource{
 		Description:   "InfluxDB Bucket resource",
 		CreateContext: resourceBucketCreate,
+		ReadContext:   resourceBucketRead,
+		DeleteContext: resourceBucketDelete,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Bucket name",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"org_id": {
 				Description: "Organization ID",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}
 }
 
 func resourceBucketCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(influxdb2.Client)
-	bucketsClient := client.BucketsAPI()
+	client := meta.(*influxdb2.Client)
+	bucketsClient := (*client).BucketsAPI()
 
-	orgId := data.Get("orgId").(string)
+	orgId := data.Get("org_id").(string)
 	name := data.Get("name").(string)
 
-	bucketsClient.CreateBucketWithNameWithID(ctx, orgId, name)
+	bucket, err := bucketsClient.CreateBucketWithNameWithID(ctx, orgId, name)
+
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	data.SetId(*bucket.Id)
 
 	return nil
 }
 
 func resourceBucketRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(influxdb2.Client)
-	bucketsClient := client.BucketsAPI()
+	client := meta.(*influxdb2.Client)
+	bucketsClient := (*client).BucketsAPI()
 
-	bucketsClient.FindBucketByID(ctx, data.Id())
+	bucket, err := bucketsClient.FindBucketByID(ctx, data.Id())
+
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	data.Set("org_id", *bucket.OrgID)
+	data.Set("name", bucket.Name)
+
+	return nil
+}
+
+func resourceBucketDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*influxdb2.Client)
+	bucketsClient := (*client).BucketsAPI()
+
+	err := bucketsClient.DeleteBucketWithID(ctx, data.Id())
+
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	return nil
 }

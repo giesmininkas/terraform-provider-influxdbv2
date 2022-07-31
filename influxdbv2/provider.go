@@ -39,7 +39,7 @@ func New(version string) func() *schema.Provider {
 			},
 			DataSourcesMap: map[string]*schema.Resource{},
 			ResourcesMap: map[string]*schema.Resource{
-				"bucket_resource": resourceBucket(),
+				"influxdbv2_bucket": resourceBucket(),
 			},
 		}
 
