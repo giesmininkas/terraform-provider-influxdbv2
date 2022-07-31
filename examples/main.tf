@@ -7,12 +7,22 @@ terraform {
   }
 }
 
+locals {
+#  org_id = "293ca298c3861fa3" # laptop
+  org_id = "9a4706ee542a75c5" # laptop
+}
+
 provider "influxdbv2" {
   host = "http://localhost:8086"
-  token = "J0HGVO8RGAq-gNfcppdPBXkqxNkTiSR9k4Ph3ilZYuC4mhqneFSBiTcjl3VoQx8gHJp81FdGSZcvx-9A_QTTkg=="
+#  token = "J0HGVO8RGAq-gNfcppdPBXkqxNkTiSR9k4Ph3ilZYuC4mhqneFSBiTcjl3VoQx8gHJp81FdGSZcvx-9A_QTTkg==" # desktop
+  token = "IROsuGp99nYeiori-EW5eogsAUVN6YLeyXQZMoL7d5QoRG0KUy2ZSCLZ7eiNDn1bpDKrtlmiuYrLLyE9WshYDg==" # laptop
 }
 
 resource "influxdbv2_bucket" "test_bucket" {
   name = "aaaaaaa"
-  org_id = "293ca298c3861fa3"
+  org_id = local.org_id
+#  retention_rules {
+#    every_seconds = 3600
+##    shard_group_duration_seconds = 1800
+#  }
 }

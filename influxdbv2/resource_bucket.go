@@ -13,39 +13,57 @@ func resourceBucket() *schema.Resource {
 		Description:   "InfluxDB Bucket resource",
 		CreateContext: resourceBucketCreate,
 		ReadContext:   resourceBucketRead,
+		UpdateContext: resourceBucketUpdate,
 		DeleteContext: resourceBucketDelete,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Bucket name",
+				Description: "Bucket name.",
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 			},
 			"org_id": {
-				Description: "Organization ID",
+				Description: "ID of organization in which to create a bucket.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 			},
-			"retention_seconds": {
-				Description: "Time to keep the data in seconds. 0 == infinite",
-				Type:        schema.TypeInt,
+			"description": {
+				Description: "Description of the bucket.",
+				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true,
+			},
+			"retention_rules": {
+				Description: "Rules to expire or retain data. No rules means data never expires.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"every_seconds": {
+							Description: "Duration in seconds for how long data will be kept in the database. 0 means infinite.",
+							Type:        schema.TypeInt,
+							Required:    true,
+						},
+						"shard_group_duration_seconds": {
+							Description: "Shard duration measured in seconds.",
+							Type:        schema.TypeInt,
+							Optional:    true,
+						},
+					},
+				},
 			},
 			"created_at": {
-				Description: "Bucket creation date",
+				Description: "Bucket creation date.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 			"updated_at": {
-				Description: "Last bucket update date",
+				Description: "Last bucket update date.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 			"type": {
-				Description: "Bucket type",
+				Description: "Bucket type.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -57,19 +75,13 @@ func resourceBucketCreate(ctx context.Context, data *schema.ResourceData, meta i
 	client := *(meta.(*influxdb2.Client))
 	bucketsClient := client.BucketsAPI()
 
-	orgId := data.Get("org_id").(string)
-	name := data.Get("name").(string)
-	retentionSeconds, ok := data.GetOk("retention_seconds")
+	bucket, diags := mapToBucket(data)
 
-	retentionRules := domain.RetentionRule{
-		EverySeconds: 0,
+	if diags.HasError() {
+		return diags
 	}
 
-	if ok {
-		retentionRules.EverySeconds = retentionSeconds.(int64)
-	}
-
-	bucket, err := bucketsClient.CreateBucketWithNameWithID(ctx, orgId, name, retentionRules)
+	bucket, err := bucketsClient.CreateBucket(ctx, bucket)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -92,10 +104,51 @@ func resourceBucketRead(ctx context.Context, data *schema.ResourceData, meta int
 
 	data.Set("org_id", *bucket.OrgID)
 	data.Set("name", bucket.Name)
-	data.Set("retention_seconds", bucket.RetentionRules[0].EverySeconds)
+	data.Set("description", bucket.Description)
 	data.Set("created_at", bucket.CreatedAt.String())
 	data.Set("updated_at", bucket.UpdatedAt.String())
 	data.Set("type", bucket.Type)
+
+	var retentionRules []map[string]interface{}
+	for _, rule := range bucket.RetentionRules {
+		mapped := map[string]interface{}{
+			"every_seconds":                rule.EverySeconds,
+			"shard_group_duration_seconds": *rule.ShardGroupDurationSeconds,
+		}
+		retentionRules = append(retentionRules, mapped)
+	}
+
+	data.Set("retention_rules", retentionRules)
+
+	return nil
+}
+
+func resourceBucketUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := *(meta.(*influxdb2.Client))
+	bucketsClient := client.BucketsAPI()
+
+	bucket, diags := mapToBucket(data)
+
+	if diags.HasError() {
+		return diags
+	}
+
+	if len(bucket.RetentionRules) == 0 {
+		rule := domain.RetentionRule{
+			EverySeconds:              0,
+			ShardGroupDurationSeconds: nil,
+		}
+		bucket.RetentionRules = append(bucket.RetentionRules, rule)
+	}
+
+	bucketId := data.Id()
+	bucket.Id = &bucketId
+
+	bucket, err := bucketsClient.UpdateBucket(ctx, bucket)
+
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	return nil
 }
@@ -111,4 +164,54 @@ func resourceBucketDelete(ctx context.Context, data *schema.ResourceData, meta i
 	}
 
 	return nil
+}
+
+func mapToBucket(data *schema.ResourceData) (*domain.Bucket, diag.Diagnostics) {
+	orgId := data.Get("org_id").(string)
+
+	bucket := domain.Bucket{
+		Name:  data.Get("name").(string),
+		OrgID: &orgId,
+	}
+
+	description, ok := data.GetOk("description")
+	if ok {
+		bucket.Description = description.(*string)
+	}
+
+	retentionRules := domain.RetentionRules{}
+	for _, retentionRule := range data.Get("retention_rules").(*schema.Set).List() {
+		mapped, err := mapToRetentionRule(retentionRule.(map[string]interface{}))
+		if err.HasError() {
+			return nil, err
+		}
+		retentionRules = append(retentionRules, mapped)
+	}
+	bucket.RetentionRules = retentionRules
+
+	return &bucket, nil
+}
+
+func mapToRetentionRule(data map[string]interface{}) (domain.RetentionRule, diag.Diagnostics) {
+	rule := domain.RetentionRule{
+		EverySeconds: int64(data["every_seconds"].(int)),
+		Type:         domain.RetentionRuleTypeExpire,
+	}
+
+	shardGroupDuration, ok := data["shard_group_duration_seconds"]
+	if ok {
+		tmp := int64(shardGroupDuration.(int))
+		rule.ShardGroupDurationSeconds = &tmp
+	}
+
+	var diags diag.Diagnostics
+
+	if rule.ShardGroupDurationSeconds != nil && *rule.ShardGroupDurationSeconds > rule.EverySeconds {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Shard Group duration longer than Retention Period.",
+		})
+	}
+
+	return rule, diags
 }
