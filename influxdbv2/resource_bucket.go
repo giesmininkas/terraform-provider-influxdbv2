@@ -4,7 +4,8 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/influxdata/influxdb-client-go/v2"
+	"github.com/influxdata/influxdb-client-go/v2/domain"
 )
 
 func resourceBucket() *schema.Resource {
@@ -27,18 +28,33 @@ func resourceBucket() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			"retention_seconds": {
+				Description: "Time to keep the data in seconds. 0 == infinite",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				ForceNew:    true,
+			},
 		},
 	}
 }
 
 func resourceBucketCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*influxdb2.Client)
-	bucketsClient := (*client).BucketsAPI()
+	client := *(meta.(*influxdb2.Client))
+	bucketsClient := client.BucketsAPI()
 
 	orgId := data.Get("org_id").(string)
 	name := data.Get("name").(string)
+	retentionSeconds, ok := data.GetOk("retention_seconds")
 
-	bucket, err := bucketsClient.CreateBucketWithNameWithID(ctx, orgId, name)
+	retentionRules := domain.RetentionRule{
+		EverySeconds: 0,
+	}
+
+	if ok {
+		retentionRules.EverySeconds = retentionSeconds.(int64)
+	}
+
+	bucket, err := bucketsClient.CreateBucketWithNameWithID(ctx, orgId, name, retentionRules)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -50,8 +66,8 @@ func resourceBucketCreate(ctx context.Context, data *schema.ResourceData, meta i
 }
 
 func resourceBucketRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*influxdb2.Client)
-	bucketsClient := (*client).BucketsAPI()
+	client := *(meta.(*influxdb2.Client))
+	bucketsClient := client.BucketsAPI()
 
 	bucket, err := bucketsClient.FindBucketByID(ctx, data.Id())
 
@@ -61,13 +77,14 @@ func resourceBucketRead(ctx context.Context, data *schema.ResourceData, meta int
 
 	data.Set("org_id", *bucket.OrgID)
 	data.Set("name", bucket.Name)
+	data.Set("retention_seconds", bucket.RetentionRules[0].EverySeconds)
 
 	return nil
 }
 
 func resourceBucketDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*influxdb2.Client)
-	bucketsClient := (*client).BucketsAPI()
+	client := *(meta.(*influxdb2.Client))
+	bucketsClient := client.BucketsAPI()
 
 	err := bucketsClient.DeleteBucketWithID(ctx, data.Id())
 
