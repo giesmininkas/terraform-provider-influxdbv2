@@ -34,6 +34,21 @@ func resourceBucket() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 			},
+			"created_at": {
+				Description: "Bucket creation date",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"updated_at": {
+				Description: "Last bucket update date",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"type": {
+				Description: "Bucket type",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -78,6 +93,9 @@ func resourceBucketRead(ctx context.Context, data *schema.ResourceData, meta int
 	data.Set("org_id", *bucket.OrgID)
 	data.Set("name", bucket.Name)
 	data.Set("retention_seconds", bucket.RetentionRules[0].EverySeconds)
+	data.Set("created_at", bucket.CreatedAt.String())
+	data.Set("updated_at", bucket.UpdatedAt.String())
+	data.Set("type", bucket.Type)
 
 	return nil
 }
