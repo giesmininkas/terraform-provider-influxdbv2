@@ -140,7 +140,7 @@ func resourceAuthorizationCreate(ctx context.Context, data *schema.ResourceData,
 		authorization.AuthorizationUpdateRequest.Description = &tmp
 	}
 
-	permissions := []domain.Permission{}
+	var permissions []domain.Permission
 	for _, permissionData := range data.Get("permissions").(*schema.Set).List() {
 		permissionDataMap := permissionData.(map[string]interface{})
 		resourceDataMap := permissionDataMap["resource"].(*schema.Set).List()[0].(map[string]interface{})
