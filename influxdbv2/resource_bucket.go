@@ -37,6 +37,7 @@ func resourceBucket() *schema.Resource {
 				Description: "Rules to expire or retain data. No rules means data never expires.",
 				Type:        schema.TypeSet,
 				Optional:    true,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"every_seconds": {

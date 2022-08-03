@@ -82,6 +82,7 @@ func resourceAuthorization() *schema.Resource {
 				Description: "ID of the user that created and owns the token.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 				ForceNew:    true,
 			},
 			"token": {
