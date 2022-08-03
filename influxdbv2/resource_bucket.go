@@ -93,7 +93,9 @@ func resourceBucketCreate(ctx context.Context, data *schema.ResourceData, meta i
 
 	data.SetId(*bucket.Id)
 
-	return nil
+	diags = append(diags, resourceBucketRead(ctx, data, meta)...)
+
+	return diags
 }
 
 func resourceBucketRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -154,7 +156,9 @@ func resourceBucketUpdate(ctx context.Context, data *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 
-	return nil
+	diags = append(diags, resourceBucketRead(ctx, data, meta)...)
+
+	return diags
 }
 
 func resourceBucketDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -180,7 +184,8 @@ func mapToBucket(data *schema.ResourceData) (*domain.Bucket, diag.Diagnostics) {
 
 	description, ok := data.GetOk("description")
 	if ok {
-		bucket.Description = description.(*string)
+		tmp := description.(string)
+		bucket.Description = &tmp
 	}
 
 	retentionRules := domain.RetentionRules{}

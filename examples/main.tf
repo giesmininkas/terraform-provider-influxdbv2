@@ -21,6 +21,7 @@ provider "influxdbv2" {
 resource "influxdbv2_bucket" "test_bucket" {
   name = "aaaaaaa"
   org_id = local.org_id
+  description = "jkbkjkf"
 #  retention_rules {
 #    every_seconds = 3600
 ##    shard_group_duration_seconds = 1800
@@ -30,4 +31,16 @@ resource "influxdbv2_bucket" "test_bucket" {
 resource "influxdbv2_bucket" "test2_bucket" {
   name = "test2"
   org_id = local.org_id
+}
+
+resource "influxdbv2_authorization" "test_auth" {
+  org_id = local.org_id
+  permissions {
+    action = "read"
+    resource {
+      id = "0f170a84fd13372b"
+      org_id = local.org_id
+      type = "buckets"
+    }
+  }
 }
