@@ -68,6 +68,10 @@ func resourceBucket() *schema.Resource {
 				Computed:    true,
 			},
 		},
+
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 	}
 }
 
@@ -102,12 +106,12 @@ func resourceBucketRead(ctx context.Context, data *schema.ResourceData, meta int
 		return diag.FromErr(err)
 	}
 
-	data.Set("org_id", *bucket.OrgID)
-	data.Set("name", bucket.Name)
-	data.Set("description", bucket.Description)
-	data.Set("created_at", bucket.CreatedAt.String())
-	data.Set("updated_at", bucket.UpdatedAt.String())
-	data.Set("type", bucket.Type)
+	_ = data.Set("org_id", *bucket.OrgID)
+	_ = data.Set("name", bucket.Name)
+	_ = data.Set("description", bucket.Description)
+	_ = data.Set("created_at", bucket.CreatedAt.String())
+	_ = data.Set("updated_at", bucket.UpdatedAt.String())
+	_ = data.Set("type", bucket.Type)
 
 	var retentionRules []map[string]interface{}
 	for _, rule := range bucket.RetentionRules {
@@ -118,7 +122,7 @@ func resourceBucketRead(ctx context.Context, data *schema.ResourceData, meta int
 		retentionRules = append(retentionRules, mapped)
 	}
 
-	data.Set("retention_rules", retentionRules)
+	_ = data.Set("retention_rules", retentionRules)
 
 	return nil
 }

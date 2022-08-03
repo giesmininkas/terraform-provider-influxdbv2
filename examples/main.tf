@@ -26,3 +26,8 @@ resource "influxdbv2_bucket" "test_bucket" {
 ##    shard_group_duration_seconds = 1800
 #  }
 }
+
+resource "influxdbv2_bucket" "test2_bucket" {
+  name = "test2"
+  org_id = local.org_id
+}
