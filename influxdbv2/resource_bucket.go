@@ -140,14 +140,6 @@ func resourceBucketUpdate(ctx context.Context, data *schema.ResourceData, meta i
 		return diags
 	}
 
-	if len(bucket.RetentionRules) == 0 {
-		rule := domain.RetentionRule{
-			EverySeconds:              0,
-			ShardGroupDurationSeconds: nil,
-		}
-		bucket.RetentionRules = append(bucket.RetentionRules, rule)
-	}
-
 	bucketId := data.Id()
 	bucket.Id = &bucketId
 

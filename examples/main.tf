@@ -35,10 +35,11 @@ resource "influxdbv2_bucket" "test2_bucket" {
 
 resource "influxdbv2_authorization" "test_auth" {
   org_id = local.org_id
+  description = "fbkbkf"
   permissions {
     action = "read"
     resource {
-      id = "0f170a84fd13372b"
+      id = influxdbv2_bucket.test2_bucket.id
       org_id = local.org_id
       type = "buckets"
     }

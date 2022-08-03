@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/domain"
 )
 
@@ -245,62 +245,27 @@ func resourceAuthorizationRead(ctx context.Context, data *schema.ResourceData, m
 
 	data.Set("permissions", permissions)
 
-	//bucketsClient := client.BucketsAPI()
-	//
-	//bucket, err := bucketsClient.FindBucketByID(ctx, data.Id())
-	//
-	//if err != nil {
-	//	return diag.FromErr(err)
-	//}
-	//
-	//_ = data.Set("org_id", *bucket.OrgID)
-	//_ = data.Set("name", bucket.Name)
-	//_ = data.Set("description", bucket.Description)
-	//_ = data.Set("created_at", bucket.CreatedAt.String())
-	//_ = data.Set("updated_at", bucket.UpdatedAt.String())
-	//_ = data.Set("type", bucket.Type)
-	//
-	//var retentionRules []map[string]interface{}
-	//for _, rule := range bucket.RetentionRules {
-	//	mapped := map[string]interface{}{
-	//		"every_seconds":                rule.EverySeconds,
-	//		"shard_group_duration_seconds": *rule.ShardGroupDurationSeconds,
-	//	}
-	//	retentionRules = append(retentionRules, mapped)
-	//}
-	//
-	//_ = data.Set("retention_rules", retentionRules)
-	//
 	return nil
 }
 
 func resourceAuthorizationUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	//client := *(meta.(*influxdb2.Client))
-	//bucketsClient := client.BucketsAPI()
-	//
-	//bucket, diags := mapToBucket(data)
-	//
-	//if diags.HasError() {
-	//	return diags
-	//}
-	//
-	//if len(bucket.RetentionRules) == 0 {
-	//	rule := domain.RetentionRule{
-	//		EverySeconds:              0,
-	//		ShardGroupDurationSeconds: nil,
-	//	}
-	//	bucket.RetentionRules = append(bucket.RetentionRules, rule)
-	//}
-	//
-	//bucketId := data.Id()
-	//bucket.Id = &bucketId
-	//
-	//bucket, err := bucketsClient.UpdateBucket(ctx, bucket)
-	//
-	//if err != nil {
-	//	return diag.FromErr(err)
-	//}
-	//
+	client := *(meta.(*influxdb2.Client))
+	authClient := client.AuthorizationsAPI()
+
+	var status domain.AuthorizationUpdateRequestStatus
+	switch data.Get("avtive").(bool) {
+	case true:
+		status = domain.AuthorizationUpdateRequestStatusActive
+		break
+	case false:
+		status = domain.AuthorizationUpdateRequestStatusInactive
+		break
+	}
+
+	_, err := authClient.UpdateAuthorizationStatusWithID(ctx, data.Id(), status)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	diags := resourceAuthorizationRead(ctx, data, meta)
 
@@ -319,53 +284,3 @@ func resourceAuthorizationDelete(ctx context.Context, data *schema.ResourceData,
 
 	return nil
 }
-
-//func mapToBucket(data *schema.ResourceData) (*domain.Bucket, diag.Diagnostics) {
-//	orgId := data.Get("org_id").(string)
-//
-//	bucket := domain.Bucket{
-//		Name:  data.Get("name").(string),
-//		OrgID: &orgId,
-//	}
-//
-//	description, ok := data.GetOk("description")
-//	if ok {
-//		bucket.Description = description.(*string)
-//	}
-//
-//	retentionRules := domain.RetentionRules{}
-//	for _, retentionRule := range data.Get("retention_rules").(*schema.Set).List() {
-//		mapped, err := mapToRetentionRule(retentionRule.(map[string]interface{}))
-//		if err.HasError() {
-//			return nil, err
-//		}
-//		retentionRules = append(retentionRules, mapped)
-//	}
-//	bucket.RetentionRules = retentionRules
-//
-//	return &bucket, nil
-//}
-
-//func mapToRetentionRule(data map[string]interface{}) (domain.RetentionRule, diag.Diagnostics) {
-//	rule := domain.RetentionRule{
-//		EverySeconds: int64(data["every_seconds"].(int)),
-//		Type:         domain.RetentionRuleTypeExpire,
-//	}
-//
-//	shardGroupDuration, ok := data["shard_group_duration_seconds"]
-//	if ok {
-//		tmp := int64(shardGroupDuration.(int))
-//		rule.ShardGroupDurationSeconds = &tmp
-//	}
-//
-//	var diags diag.Diagnostics
-//
-//	if rule.ShardGroupDurationSeconds != nil && *rule.ShardGroupDurationSeconds > rule.EverySeconds {
-//		diags = append(diags, diag.Diagnostic{
-//			Severity: diag.Error,
-//			Summary:  "Shard Group duration longer than Retention Period.",
-//		})
-//	}
-//
-//	return rule, diags
-//}
