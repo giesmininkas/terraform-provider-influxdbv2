@@ -71,6 +71,7 @@ func resourceAuthorization() *schema.Resource {
 				Description: "A description of the token.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				ForceNew:    true,
 			},
 			"active": {
 				Description: "Status of the token. If inactive, requests using the token will be rejected.",
@@ -253,7 +254,7 @@ func resourceAuthorizationUpdate(ctx context.Context, data *schema.ResourceData,
 	authClient := client.AuthorizationsAPI()
 
 	var status domain.AuthorizationUpdateRequestStatus
-	switch data.Get("avtive").(bool) {
+	switch data.Get("active").(bool) {
 	case true:
 		status = domain.AuthorizationUpdateRequestStatusActive
 		break
