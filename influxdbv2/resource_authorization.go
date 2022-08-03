@@ -50,13 +50,13 @@ func resourceAuthorization() *schema.Resource {
 										ForceNew:    true,
 									},
 									"id": {
-										Description: "If ID is set that is a permission for a specific resource. if it is not set it is a permission for all resources of that resource type.",
+										Description: "If ID is set, that is a permission for a specific resource. If it is not set, it is a permission for all resources of that resource type.",
 										Type:        schema.TypeString,
 										Optional:    true,
 										ForceNew:    true,
 									},
 									"org_id": {
-										Description: "If orgID is set that is a permission for all resources owned my that org. if it is not set it is a permission for all resources of that resource type.",
+										Description: "If orgID is set, that is a permission for all resources owned by that org. If it is not set, it is a permission for all resources of that resource type.",
 										Type:        schema.TypeString,
 										Optional:    true,
 										ForceNew:    true,
@@ -90,6 +90,7 @@ func resourceAuthorization() *schema.Resource {
 				Description: "Token used to authenticate API requests.",
 				Type:        schema.TypeString,
 				Computed:    true,
+				Sensitive:   true,
 			},
 			"created_at": {
 				Description: "Authorization creation date.",
@@ -115,7 +116,7 @@ func resourceAuthorizationCreate(ctx context.Context, data *schema.ResourceData,
 
 	orgId := data.Get("org_id").(string)
 	userId, userOk := data.GetOk("user_id")
-	description, descriptionOk := data.GetOk("description_id")
+	description, descriptionOk := data.GetOk("description")
 	active := data.Get("active").(bool)
 
 	authorization := &domain.Authorization{
@@ -125,10 +126,10 @@ func resourceAuthorizationCreate(ctx context.Context, data *schema.ResourceData,
 
 	if active {
 		tmp := domain.AuthorizationUpdateRequestStatusActive
-		authorization.AuthorizationUpdateRequest.Status = &tmp
+		authorization.Status = &tmp
 	} else {
 		tmp := domain.AuthorizationUpdateRequestStatusInactive
-		authorization.AuthorizationUpdateRequest.Status = &tmp
+		authorization.Status = &tmp
 	}
 
 	if userOk {
@@ -138,7 +139,7 @@ func resourceAuthorizationCreate(ctx context.Context, data *schema.ResourceData,
 
 	if descriptionOk {
 		tmp := description.(string)
-		authorization.AuthorizationUpdateRequest.Description = &tmp
+		authorization.Description = &tmp
 	}
 
 	var permissions []domain.Permission
@@ -228,7 +229,6 @@ func resourceAuthorizationRead(ctx context.Context, data *schema.ResourceData, m
 	}
 
 	var permissions []map[string]interface{}
-	//permissions := schema.Set{}
 	for _, permission := range *authorization.Permissions {
 		tmp := map[string]interface{}{
 			"action": permission.Action,

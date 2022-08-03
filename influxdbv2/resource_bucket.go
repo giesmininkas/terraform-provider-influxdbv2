@@ -120,7 +120,7 @@ func resourceBucketRead(ctx context.Context, data *schema.ResourceData, meta int
 	for _, rule := range bucket.RetentionRules {
 		mapped := map[string]interface{}{
 			"every_seconds":                rule.EverySeconds,
-			"shard_group_duration_seconds": *rule.ShardGroupDurationSeconds,
+			"shard_group_duration_seconds": rule.ShardGroupDurationSeconds,
 		}
 		retentionRules = append(retentionRules, mapped)
 	}
