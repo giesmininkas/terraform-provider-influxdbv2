@@ -59,4 +59,10 @@ Optional:
 
 - `shard_group_duration_seconds` (Number) Shard duration measured in seconds.
 
+## Import
 
+Import is supported using the following syntax:
+
+```shell
+terraform import influxdbv2_bucket.example_bucket <BUCKET_ID>
+```

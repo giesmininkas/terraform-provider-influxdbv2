@@ -1,0 +1,1 @@
+terraform import influxdbv2_bucket.example_bucket <BUCKET_ID>

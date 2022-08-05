@@ -1,0 +1,1 @@
+terraform import influxdbv2_bucket.example_auth <AUTH_ID>
