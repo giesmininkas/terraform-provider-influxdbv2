@@ -49,7 +49,7 @@ resource "influxdbv2_authorization" "test_auth" {
 
 data "influxdbv2_bucket" "test_bucket" {
   id = influxdbv2_bucket.test_bucket.id
-#  name = influxdbv2_bucket.test_bucket.name
+  #  name = influxdbv2_bucket.test_bucket.name
 }
 
 data "influxdbv2_authorization" "test_auth" {
