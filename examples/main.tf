@@ -21,11 +21,12 @@ provider "influxdbv2" {
 resource "influxdbv2_bucket" "test_bucket" {
   name        = "aaaaaaa"
   org_id      = local.org_id
-  description = "jkbkjkf"
-  retention_rules {
-    every_seconds                = 3600
-    shard_group_duration_seconds = 1800
-  }
+  description = "jkbkjkfa"
+#  retention_rules = []
+#  retention_rules {
+#    every_seconds                = 3600
+#    shard_group_duration_seconds = 1800
+#  }
 }
 
 resource "influxdbv2_bucket" "test2_bucket" {
@@ -44,4 +45,22 @@ resource "influxdbv2_authorization" "test_auth" {
       type   = "buckets"
     }
   }
+}
+
+data "influxdbv2_bucket" "test_bucket" {
+  id = influxdbv2_bucket.test_bucket.id
+#  name = influxdbv2_bucket.test_bucket.name
+}
+
+data "influxdbv2_authorization" "test_auth" {
+  id = influxdbv2_authorization.test_auth.id
+}
+
+output "bucket" {
+  value = data.influxdbv2_bucket.test_bucket
+}
+
+output "auth" {
+  value = data.influxdbv2_authorization.test_auth
+  sensitive = true
 }

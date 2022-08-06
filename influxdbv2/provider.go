@@ -37,7 +37,10 @@ func New(version string) func() *schema.Provider {
 					Sensitive: true,
 				},
 			},
-			DataSourcesMap: map[string]*schema.Resource{},
+			DataSourcesMap: map[string]*schema.Resource{
+				"influxdbv2_bucket":        dataSourceBucket(),
+				"influxdbv2_authorization": dataSourceAuthorization(),
+			},
 			ResourcesMap: map[string]*schema.Resource{
 				"influxdbv2_bucket":        resourceBucket(),
 				"influxdbv2_authorization": resourceAuthorization(),

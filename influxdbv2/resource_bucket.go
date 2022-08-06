@@ -94,7 +94,7 @@ func resourceBucketCreate(ctx context.Context, data *schema.ResourceData, meta i
 
 	data.SetId(*bucket.Id)
 
-	diags = append(diags, resourceBucketRead(ctx, data, meta)...)
+	diags = append(diags, setBucketData(data, bucket)...)
 
 	return diags
 }
@@ -109,25 +109,9 @@ func resourceBucketRead(ctx context.Context, data *schema.ResourceData, meta int
 		return diag.FromErr(err)
 	}
 
-	data.Set("org_id", *bucket.OrgID)
-	data.Set("name", bucket.Name)
-	data.Set("description", bucket.Description)
-	data.Set("created_at", bucket.CreatedAt.String())
-	data.Set("updated_at", bucket.UpdatedAt.String())
-	data.Set("type", bucket.Type)
+	diags := setBucketData(data, bucket)
 
-	var retentionRules []map[string]interface{}
-	for _, rule := range bucket.RetentionRules {
-		mapped := map[string]interface{}{
-			"every_seconds":                rule.EverySeconds,
-			"shard_group_duration_seconds": rule.ShardGroupDurationSeconds,
-		}
-		retentionRules = append(retentionRules, mapped)
-	}
-
-	data.Set("retention_rules", retentionRules)
-
-	return nil
+	return diags
 }
 
 func resourceBucketUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -149,7 +133,7 @@ func resourceBucketUpdate(ctx context.Context, data *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 
-	diags = append(diags, resourceBucketRead(ctx, data, meta)...)
+	diags = append(diags, setBucketData(data, bucket)...)
 
 	return diags
 }

@@ -180,7 +180,7 @@ func resourceAuthorizationCreate(ctx context.Context, data *schema.ResourceData,
 
 	data.SetId(*authorization.Id)
 
-	diags := resourceAuthorizationRead(ctx, data, meta)
+	diags := setAuthorizationData(data, authorization)
 
 	return diags
 }
@@ -212,41 +212,7 @@ func resourceAuthorizationRead(ctx context.Context, data *schema.ResourceData, m
 		}
 	}
 
-	data.Set("org_id", *authorization.OrgID)
-	data.Set("description", authorization.Description)
-	data.Set("user_id", authorization.UserID)
-	data.Set("token", authorization.Token)
-	data.Set("created_at", authorization.CreatedAt.String())
-	data.Set("updated_at", authorization.UpdatedAt.String())
-
-	switch *authorization.Status {
-	case "active":
-		data.Set("active", true)
-		break
-	case "inactive":
-		data.Set("active", false)
-		break
-	}
-
-	var permissions []map[string]interface{}
-	for _, permission := range *authorization.Permissions {
-		tmp := map[string]interface{}{
-			"action": permission.Action,
-			"resource": []map[string]interface{}{
-				{
-					"id":     permission.Resource.Id,
-					"org_id": permission.Resource.OrgID,
-					"type":   permission.Resource.Type,
-				},
-			},
-		}
-
-		permissions = append(permissions, tmp)
-	}
-
-	data.Set("permissions", permissions)
-
-	return nil
+	return setAuthorizationData(data, authorization)
 }
 
 func resourceAuthorizationUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -263,12 +229,12 @@ func resourceAuthorizationUpdate(ctx context.Context, data *schema.ResourceData,
 		break
 	}
 
-	_, err := authClient.UpdateAuthorizationStatusWithID(ctx, data.Id(), status)
+	authorization, err := authClient.UpdateAuthorizationStatusWithID(ctx, data.Id(), status)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	diags := resourceAuthorizationRead(ctx, data, meta)
+	diags := setAuthorizationData(data, authorization)
 
 	return diags
 }
