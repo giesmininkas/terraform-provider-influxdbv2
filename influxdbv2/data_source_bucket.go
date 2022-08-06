@@ -20,6 +20,7 @@ func dataSourceBucket() *schema.Resource {
 				Optional:      true,
 				Computed:      true,
 				ConflictsWith: []string{"name"},
+				AtLeastOneOf:  []string{"id", "name"},
 			},
 			"name": {
 				Description:   "Bucket name.",
@@ -27,6 +28,7 @@ func dataSourceBucket() *schema.Resource {
 				Optional:      true,
 				Computed:      true,
 				ConflictsWith: []string{"id"},
+				AtLeastOneOf:  []string{"id", "name"},
 			},
 			"org_id": {
 				Description: "ID of organization in which to create a bucket.",
